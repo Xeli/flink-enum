@@ -36,26 +36,6 @@ under the License.
       <flink.version>1.8.0</flink.version>
       <avro.version>1.9.0</avro.version>
    </properties>
-   <repositories>
-    <repository>
-        <id>artifactory.local.nl.bol.com</id>
-        <name>External artifacts</name>
-        <url>https://artifactory.tools.bol.com/artifactory/apache-snapshots-cache</url>
-        <snapshots>
-            <enabled>false</enabled>
-        </snapshots>
-    </repository>
-  </repositories>
-    <pluginRepositories>
-        <pluginRepository>
-            <id>artifactory.local.nl.bol.com-plugins-release-local</id>
-            <name>bol.com plugin artifacts</name>
-            <url>https://artifactory.tools.bol.com/artifactory/apache-snapshots-cache</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </pluginRepository>
-    </pluginRepositories>
    <dependencies>
    <!-- Apache Flink dependencies -->
       <dependency>
