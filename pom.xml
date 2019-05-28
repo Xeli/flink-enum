@@ -1,0 +1,220 @@
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+
+   <groupId>com.bol.team77</groupId>
+   <artifactId>avro-enum-poc</artifactId>
+   <version>1.0-SNAPSHOT</version>
+   <packaging>jar</packaging>
+
+   <name>AvroEnumPoc</name>
+
+   <properties>
+      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+      <java.version>1.8</java.version>
+      <scala.binary.version>2.11</scala.binary.version>
+      <maven.compiler.source>${java.version}</maven.compiler.source>
+      <maven.compiler.target>${java.version}</maven.compiler.target>
+      <flink.version>1.8.0</flink.version>
+      <avro.version>1.9.0</avro.version>
+   </properties>
+   <repositories>
+    <repository>
+        <id>artifactory.local.nl.bol.com</id>
+        <name>External artifacts</name>
+        <url>https://artifactory.tools.bol.com/artifactory/apache-snapshots-cache</url>
+        <snapshots>
+            <enabled>false</enabled>
+        </snapshots>
+    </repository>
+  </repositories>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>artifactory.local.nl.bol.com-plugins-release-local</id>
+            <name>bol.com plugin artifacts</name>
+            <url>https://artifactory.tools.bol.com/artifactory/apache-snapshots-cache</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </pluginRepository>
+    </pluginRepositories>
+   <dependencies>
+   <!-- Apache Flink dependencies -->
+      <dependency>
+         <groupId>org.apache.flink</groupId>
+         <artifactId>flink-java</artifactId>
+         <version>${flink.version}</version>
+         <scope>provided</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.flink</groupId>
+         <artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
+         <version>${flink.version}</version>
+         <scope>provided</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.flink</groupId>
+         <artifactId>flink-avro</artifactId>
+         <version>${flink.version}</version>
+          <exclusions>
+              <exclusion>
+                  <groupId>org.apache.avro</groupId>
+                  <artifactId>avro</artifactId>
+              </exclusion>
+          </exclusions>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.avro</groupId>
+         <artifactId>avro</artifactId>
+         <version>${avro.version}</version>
+      </dependency>
+   </dependencies>
+
+   <build>
+      <plugins>
+
+         <!-- Java Compiler -->
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.1</version>
+            <configuration>
+               <source>${java.version}</source>
+               <target>${java.version}</target>
+            </configuration>
+         </plugin>
+
+        <plugin>
+           <groupId>org.apache.avro</groupId>
+           <artifactId>avro-maven-plugin</artifactId>
+           <version>${avro.version}</version>
+           <configuration>
+              <stringType>String</stringType>
+              <enableDecimalLogicalType>true</enableDecimalLogicalType>
+              <fieldVisibility>private</fieldVisibility>
+              <createSetters>true</createSetters>
+           </configuration>
+           <executions>
+              <execution>
+                 <phase>generate-sources</phase>
+                 <goals>
+                    <goal>schema</goal>
+                    <goal>idl-protocol</goal>
+                 </goals>
+              </execution>
+           </executions>
+        </plugin>
+    </plugins>
+   </build>
+
+  <profiles>
+      <!-- Shade to create a full jar -->
+      <profile>
+          <id>shade</id>
+          <activation>
+              <property>
+                  <name>skipShade</name>
+                  <value>!true</value>
+              </property>
+          </activation>
+          <build>
+              <plugins>
+                  <!-- create fat jar -->
+                  <plugin>
+                      <groupId>org.apache.maven.plugins</groupId>
+                      <artifactId>maven-shade-plugin</artifactId>
+                      <version>3.0.0</version>
+                      <executions>
+                          <!-- Run shade goal on package phase -->
+                          <execution>
+                              <phase>package</phase>
+                              <goals>
+                                  <goal>shade</goal>
+                              </goals>
+                              <configuration>
+                                  <createDependencyReducedPom>false</createDependencyReducedPom>
+                                  <artifactSet>
+                                      <excludes>
+                                          <exclude>org.apache.flink:force-shading</exclude>
+                                          <exclude>com.google.code.findbugs:jsr305</exclude>
+                                          <exclude>org.slf4j:*</exclude>
+                                          <exclude>log4j:*</exclude>
+                                      </excludes>
+                                  </artifactSet>
+                                  <filters>
+                                      <filter>
+                                          <!-- Do not copy the signatures in the META-INF folder.
+                                          Otherwise, this might cause SecurityExceptions when using the JAR. -->
+                                          <artifact>*:*</artifact>
+                                          <excludes>
+                                              <exclude>META-INF/*.SF</exclude>
+                                              <exclude>META-INF/*.DSA</exclude>
+                                              <exclude>META-INF/*.RSA</exclude>
+                                          </excludes>
+                                      </filter>
+                                      <filter>
+                                          <artifact>org.apache.flink:flink-avro</artifact>
+                                          <excludes>
+                                              <exclude>org/apache/flink/formats/avro/typeutils/AvroFactory.class</exclude>
+                                          </excludes>
+                                      </filter>
+                                  </filters>
+                                  <transformers>
+                                      <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                          <mainClass>com.bol.team77.TestAvroEnum</mainClass>
+                                      </transformer>
+                                  </transformers>
+                              </configuration>
+                          </execution>
+                      </executions>
+                  </plugin>
+              </plugins>
+          </build>
+      </profile>
+      <!-- This profile helps to make things run out of the box in IntelliJ -->
+      <!-- Its adds Flink's core classes to the runtime class path. -->
+      <!-- Otherwise they are missing in IntelliJ, because the dependency is 'provided' -->
+      <profile>
+         <id>add-dependencies-for-IDEA</id>
+
+         <activation>
+            <property>
+               <name>idea.version</name>
+            </property>
+         </activation>
+
+         <dependencies>
+            <dependency>
+               <groupId>org.apache.flink</groupId>
+               <artifactId>flink-java</artifactId>
+               <version>${flink.version}</version>
+               <scope>compile</scope>
+            </dependency>
+            <dependency>
+               <groupId>org.apache.flink</groupId>
+               <artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
+               <version>${flink.version}</version>
+               <scope>compile</scope>
+            </dependency>
+         </dependencies>
+      </profile>
+  </profiles>
+</project>

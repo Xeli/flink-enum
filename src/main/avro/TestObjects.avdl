@@ -1,0 +1,25 @@
+@namespace("com.bol.team77.domain")
+protocol TestProtocol {
+        enum SomeEnum{
+            A,
+            B,
+            C,
+            D,
+            E,
+            F,
+            G,
+            H,
+            I,
+            J,
+            K
+        }
+
+        record Key {
+          SomeEnum someEnum;
+        }
+
+        record MessageWithSomeEnum {
+            long id;
+            Key key;
+        }
+}
